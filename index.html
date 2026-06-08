@@ -1,0 +1,70 @@
+
+setInterval(createItem,1200);
+
+const hands=new Hands({
+locateFile:(file)=>
+`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+});
+
+hands.setOptions({
+maxNumHands:2,
+modelComplexity:1,
+minDetectionConfidence:0.5,
+minTrackingConfidence:0.5
+});
+
+hands.onResults(results=>{
+
+if(results.multiHandLandmarks){
+
+results.multiHandLandmarks.forEach((hand,i)=>{
+
+const tip=hand[8];
+
+const x=
+window.innerWidth-(tip.x*window.innerWidth);
+
+const y=
+tip.y*window.innerHeight;
+
+if(i===0){
+
+leftX=x;
+leftY=y;
+
+left.style.left=(x-30)+"px";
+left.style.top=(y-30)+"px";
+
+}else{
+
+rightX=x;
+rightY=y;
+
+right.style.left=(x-30)+"px";
+right.style.top=(y-30)+"px";
+
+}
+
+});
+
+}
+
+});
+
+const camera=new Camera(video,{
+onFrame:async()=>{
+await hands.send({image:video});
+},
+width:640,
+height:480
+});
+
+camera.start();
+
+</script>
+</body
+
+
+
+
+
