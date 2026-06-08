@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>เกมสิ่งมีชีวิต</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<style>
+body{margin:0;overflow:hidden}
+#video{
+position:fixed;
+width:100vw;
+height:100vh;
+object-fit:cover;
+transform:scaleX(-1);
+z-index:-1;
+}
+.hand{
+position:absolute;
+width:60px;
+height:60px;
+border-radius:50%;
+border:3px solid #fff;
+}
+#left{background:blue}
+#right{background:red}
+.item{
+position:absolute;
+font-size:80px;
+}
+#score{
+position:absolute;
+top:20px;
+left:20px;
+font-size:40px;
+color:white;
+}
+</style>
+</head>
+
+<body>
+
+<video id="video" autoplay playsinline></video>
+
+<div id="score">0</div>
+<div id="left" class="hand"></div>
+<div id="right" class="hand"></div>
+
+<script>
+
+let score=0;
+
+let leftX=0,leftY=0;
+let rightX=0,rightY=0;
+
+const left=document.getElementById("left");
+const right=document.getElementById("right");
+
+const living=["🐱","🐶","🐟","🌳"];
+const nonliving=["🚗","📚","✏️","🪑"];
+
+function createItem(){
+
+const div=document.createElement("div");
+div.className="item";
+
+const live=Math.random()>0.5;
+
+div.innerHTML=
+live?
+living[Math.floor(Math.random()*living.length)]:
+nonliving[Math.floor(Math.random()*nonliving.length)];
+
+div.dataset.score=live?5:-5;
+
+div.style.left=
+Math.random()*(window.innerWidth-100)+"px";
+
+div.style.top=
+(window.innerHeight+100)+"px";
+
+document.body.appendChild(div);
+
+let y=window.innerHeight+100;
+
+const move=setInterval(()=>{
+
+y-=3;
+div.style.top=y+"px";
+
+const r=div.getBoundingClientRect();
+
+const hit=
+(
+leftX>r.left&&leftX<r.right&&
+leftY>r.top&&leftY<r.bottom
+)
+||
+(
+rightX>r.left&&rightX<r.right&&
+rightY>r.top&&rightY<r.bottom
+);
+
+if(hit){
+
+score+=Number(div.dataset.score);
+
+document.getElementById("score").innerHTML=
+"คะแนน "+score;
+
+div.remove();
+clearInterval(move);
+
+}
+
+if(y<-100){
+div.remove();
+clearInterval(move);
+}
+
+},16);
+
+}
+
+setInterval(createItem,1200);
+
+const hands=new Hands({
+locateFile:(file)=>
+`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+});
+
+hands.setOptions({
+maxNumHands:2,
+modelComplexity:1,
+minDetectionConfidence:0.5,
+minTrackingConfidence:0.5
+});
+
+hands.onResults(results=>{
+
+if(results.multiHandLandmarks){
+
+results.multiHandLandmarks.forEach((hand,i)=>{
+
+const tip=hand[8];
+
+const x=
+window.innerWidth-(tip.x*window.innerWidth);
+
+const y=
+tip.y*window.innerHeight;
+
+if(i===0){
+
+leftX=x;
+leftY=y;
+
+left.style.left=(x-30)+"px";
+left.style.top=(y-30)+"px";
+
+}else{
+
+rightX=x;
+rightY=y;
+
+right.style.left=(x-30)+"px";
+right.style.top=(y-30)+"px";
+
+}
+
+});
+
+}
+
+});
+
+const camera=new Camera(video,{
+onFrame:async()=>{
+await hands.send({image:video});
+},
+width:640,
+height:480
+});
+
+camera.start();
+
+</script>
+</body>
+</html>
